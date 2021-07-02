@@ -1,0 +1,568 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--设置路径-->
+<mapper namespace="com.example.demo.dao.mapper.WorksMapper">
+    <resultMap id="WorksMapA" type="com.example.demo.pojo.Workdomain.Works">
+        <id property="wid" column="id"/>
+        <result property="match_name" column="name"/>
+        <result property="match_project" column="project"/>
+        <result property="category" column="type"/>
+    </resultMap>
+    <resultMap id="WorksMapB" type="com.example.demo.pojo.Workdomain.WorksPF">
+        <id property="wid" column="id"/>
+        <result property="worksname" column="worksname"/>
+        <result property="date" column="date"/>
+        <result property="match_name" column="name"/>
+        <result property="match_project" column="project"/>
+        <result property="type" column="type"/>
+        <result property="teacher" column="teacher"/>
+        <result property="score" column="score"/>
+        <result property="rank" column="ranknum"/>
+        <result property="college" column="college"/>
+    </resultMap>
+    <resultMap id="WorksMapC" type="com.example.demo.pojo.Workdomain.WorksMes">
+        <result property="match_name" column="name"/>
+        <result property="match_project" column="project"/>
+    </resultMap>
+    <select id="queryWorksMesByWid" resultMap="WorksMapC">
+        SELECT p.number,u.school,w.worksname,w.introduce,w.design,w.date,w.teacher,w.normalization,
+               w.unit,w.teamname,w.video,w.score,w.document,w.pdf,w.certificate,m.`name`,m.project,m.type,pml.prize_name,p.file_name,w.reward_date
+        FROM works w
+        INNER JOIN matchtable m ON w.mid=m.mid
+        INNER JOIN user u ON u.number=w.author1_id
+        INNER JOIN prize_match_level pml ON pml.pr_id=w.certificate
+        INNER JOIN prize p ON pml.pm_id=p.id
+        WHERE w.id=#{wid}
+    </select>
+    <select id="queryWorksMesByWidNoPrize" resultMap="WorksMapC">
+        SELECT u.school,w.worksname,w.introduce,w.design,w.date,w.teacher,w.normalization,
+               w.unit,w.teamname,w.video,w.score,w.document,w.pdf,w.certificate,m.`name`,m.project,m.type
+        FROM works w
+        INNER JOIN matchtable m ON w.mid=m.mid
+        INNER JOIN user u ON u.number=w.author1_id
+        WHERE w.id=#{wid}
+    </select>
+    <select id="queryWorksImgByWid" resultType="map">
+        select ifnull(w.image1,0)as image1,ifnull(w.image2,0)as image2,ifnull(w.image3,0)as image3,ifnull(w.image4,0)as image4,ifnull(w.image5,0)as image5 from works w
+        where id=#{wid}
+    </select>
+    <select id="queryWorksAuthorByWid" resultType="com.example.demo.pojo.Author">
+        select
+        ifnull(w.author1_name,null)as author1Name,ifnull(w.author2_name,null)as author2Name,
+        ifnull(w.author3_name,null)as author3Name,ifnull(w.author4_name,null)as author4Name,
+        ifnull(w.author5_name,null)as author5Name
+        from works w
+        where id=#{wid}
+    </select>
+<!--查询全部作品-->
+    <select id="queryAllWorksByString" resultMap="WorksMapB" parameterType="map">
+       select
+        w.id,w.worksname,w.date,w.teacher,
+        w.author1_name,w.author2_name,w.author3_name,w.author4_name,w.author5_name,
+        w.author1_id,w.author2_id,w.author3_id,w.author4_id,w.author5_id,
+        m.`name`,m.project,w.normalization,m.type,
+        u.school,u.college as college,u.major,
+        u.number,u.phone,u.email
+       from works w
+       INNER JOIN matchtable m ON w.mid=m.mid
+        INNER JOIN user u ON u.number=w.author1_id
+       <where>
+           w.normalization>=-2 and m.isSort=0
+           <if test="match_name!=null">
+               and m.name like "%"#{match_name}"%"
+           </if>
+           <if test="match_project!=null">
+               and m.project like "%"#{match_project}"%"
+           </if>
+           <if test="work_name!=null">
+               and w.worksname like "%"#{work_name}"%"
+           </if>
+           <if test="type!=null">
+               and m.type like "%"#{type}"%"
+           </if>
+           <if test="teamname!=null">
+               and w.teamname like "%"#{teamname}"%"
+           </if>
+           <if test="author1_name!=null">
+               and w.author1_name like "%"#{author1_name}"%"
+           </if>
+           <if test="teacher!=null">
+               and w.teacher like "%"#{teacher}"%"
+           </if>
+           <if test="normalization!=null">
+               and w.normalization=#{normalization}
+           </if>
+       </where>
+        order by UNIX_TIMESTAMP(w.date) DESC,m.type
+    </select>
+    <select id="queryAllWorks" resultMap="WorksMapB">
+       select w.id,w.worksname,w.date,w.teacher,w.author1_name,m.`name`,m.project,w.normalization,m.type,u.phone,u.school from works w
+		INNER JOIN matchtable m ON w.mid=m.mid
+		INNER JOIN user u ON u.number=w.author1_id
+		where w.normalization>=0
+		order by m.type
+    </select>
+    <select id="queryWorksMesA" resultMap="WorksMapB" >
+        SELECT  w.id,w.worksname,w.date,w.teacher,m.`name`,m.project,m.type,w.author1_name,u.school,u.college,u.major,u.number,u.phone,u.email FROM works w
+        INNER JOIN matchtable m ON w.mid=m.mid
+        INNER JOIN user u ON u.number=w.author1_id
+        WHERE w.normalization=0  order by m.type
+    </select>
+    <select id="queryWorksMesAByString" parameterType="map" resultMap="WorksMapB">
+         SELECT
+        w.id,w.worksname,w.date,w.teacher,
+        m.`name`,m.project,m.type,
+        w.author1_name,w.author2_name,w.author3_name,w.author4_name,w.author5_name,
+        w.author1_id,w.author2_id,w.author3_id,w.author4_id,w.author5_id,
+        u.school,u.college as college,u.major as major,u.number as number,
+        u.phone as phone,u.email as email
+        FROM works w
+         INNER JOIN matchtable m ON w.mid=m.mid
+         INNER JOIN user u ON u.number=w.author1_id
+         <where>
+             w.normalization=0 and m.isSort=0
+             <if test="match_name!=null">
+                 and m.name like "%"#{match_name}"%"
+             </if>
+             <if test="match_project!=null">
+                 and m.project like "%"#{match_project}"%"
+             </if>
+             <if test="work_name!=null">
+                 and w.worksname like "%"#{work_name}"%"
+             </if>
+             <if test="type!=null">
+                 and m.type like "%"#{type}"%"
+             </if>
+             <if test="author1_name!=null">
+                 and w.author1_name like "%"#{author1_name}"%"
+             </if>
+             <if test="leaderteacher!=null">
+                 and teacher like "%"#{leaderteacher}"%"
+             </if>
+
+             <if test="teamname!=null">
+                 and w.teamname like "%"#{teamname}"%"
+             </if>
+         </where>
+        order by UNIX_TIMESTAMP(w.date) DESC,m.type
+    </select>
+    <update id="updateWorksNor" parameterType="int">
+        <foreach collection ="list" item="item" index= "index" open="" close="" separator=";">
+            update works w set w.normalization=#{item.r} where w.id=#{item.wid}
+        </foreach>
+    </update>
+    <delete id="deleteUser_WorksByWid">
+        <foreach collection ="list" item="item" index= "index" open="" close="" separator=";">
+            delete from user_works where wid=#{item.wid}
+        </foreach>
+    </delete>
+
+
+    <select id="queryWorksMesB" resultMap="WorksMapB">
+        SELECT  w.id,w.worksname,w.date,w.teacher,m.`name`,m.project,m.type,w.author1_name,u.school,u.college,u.major,u.number,u.phone,u.email FROM works w
+        INNER JOIN matchtable m ON w.mid=m.mid
+        INNER JOIN user u ON u.number=w.author1_id
+        WHERE w.normalization=1  order by m.type
+    </select>
+    <select id="queryWorksMesBByString" resultMap="WorksMapB" parameterType="map">
+        SELECT
+        w.id,w.worksname,w.date,w.teacher,
+        m.`name`,m.project,m.type,
+        w.author1_name,w.author2_name,w.author3_name,w.author4_name,w.author5_name,
+        w.author1_id,w.author2_id,w.author3_id,w.author4_id,w.author5_id,
+        u.school,u.college as college,u.major as major,u.number as number,
+        u.phone as phone,u.email as email
+        FROM works w
+        INNER JOIN user u ON u.number=w.author1_id
+        INNER JOIN matchtable m ON w.mid=m.mid
+        <where>
+            w.normalization=1 and m.isSort=0
+            <if test="match_name!=null">
+                and m.name like "%"#{match_name}"%"
+            </if>
+            <if test="match_project!=null">
+                and m.project like "%"#{match_project}"%"
+            </if>
+            <if test="work_name!=null">
+                and w.worksname like "%"#{work_name}"%"
+            </if>
+            <if test="type!=null">
+                and m.type like "%"#{type}"%"
+            </if>
+            <if test="author1_name!=null">
+                and w.author1_name like "%"#{author1_name}"%"
+            </if>
+
+            <if test="leaderteacher!=null">
+                and w.teacher like "%"#{leaderteacher}"%"
+            </if>
+            <if test="teamname!=null">
+                and w.teamname like "%"#{teamname}"%"
+            </if>
+        </where>
+        order by UNIX_TIMESTAMP(w.date) DESC, m.type
+    </select>
+    <insert id="insertIntoDistribute" parameterType="java.util.List">
+        INSERT IGNORE INTO distribute (wid,tid,sid,last_time) VALUES
+        <foreach collection ="list" item="item" index= "index" separator =",">
+        (
+            #{item.wid},
+            #{item.tid},
+            #{item.sid},
+            #{item.last_time}
+        )
+        </foreach>
+    </insert>
+
+
+    <select id="queryWorksMesC" resultMap="WorksMapB">
+         SELECT  w.id,w.worksname,w.date,w.teacher,m.`name`,m.project,m.type,w.author1_name,u.school,u.college,u.major,u.number,u.phone,u.email FROM works w
+        INNER JOIN matchtable m ON w.mid=m.mid
+        INNER JOIN user u ON u.number=w.author1_id
+        WHERE w.normalization=2 or w.normalization=3 order by m.type
+    </select>
+    <select id="queryWorksMesCByString" resultMap="WorksMapB" parameterType="map">
+        SELECT  w.id,w.worksname,w.date,w.teacher,m.`name`,m.project,m.type,w.author1_name,u.school,u.college,u.major,u.number,u.phone,u.email FROM works w
+        INNER JOIN matchtable m ON w.mid=m.mid
+        INNER JOIN user u ON u.number=w.author1_id
+        <where>
+            w.normalization=2 and w.normalization=3
+            <if test="match_name!=null">
+                and m.name like "%"#{match_name}"%"
+            </if>
+            <if test="match_project!=null">
+                and m.project like "%"#{match_project}"%"
+            </if>
+            <if test="work_name!=null">
+                and w.worksname like "%"#{work_name}"%"
+            </if>
+            <if test="type!=null">
+                and m.type like "%"#{type}"%"
+            </if>
+            <if test="author1_name!=null">
+                and w.author1_name like "%"#{author1_name}"%"
+            </if>
+
+            <if test="leaderteacher!=null">
+                and w.teacher like "%"#{leaderteacher}"%"
+            </if>
+            <if test="teamname!=null">
+                and w.teamname like "%"#{teamname}"%"
+            </if>
+        </where>
+        order by m.type
+    </select>
+    <delete id="deleteDistributeByWid" >
+        delete from distribute  where wid=#{wid}
+    </delete>
+	<delete id="deleteSimilarTable">
+        truncate table similar
+    </delete>
+
+
+	<!--用户端-->
+    <select id="findallWork" resultMap="WorksMapA" parameterType="map">
+        SELECT w.*,m.`name`,m.project,m.type FROM user_works wu
+        INNER JOIN works w ON w.id=wu.wid
+        INNER JOIN matchtable m ON wu.mid=m.mid
+        <where>
+            w.normalization>0
+            <if test="id != null">
+               and wu.wid=#{id}
+            </if>
+        </where>
+        GROUP BY wu.wid
+        ORDER BY w.date DESC
+    </select>
+    <select id="queryWorkMesByNumber" resultMap="WorksMapA">
+        SELECT w.*
+        FROM user_works uw
+        INNER JOIN works w ON uw.wid = w.id
+        where uw.number=#{number} and w.normalization!=-1
+    </select>
+    <select id="ChecktoSubmit" resultType="java.util.Map">
+        select m.end_date from matchtable m where m.mid=#{mid}
+    </select>
+    <select id="ChecktoMatch" resultType="integer">
+        select w.normalization from user_works uw
+        INNER JOIN works w ON uw.wid=w.id
+        where uw.uid=#{uid} and uw.mid=#{mid}
+    </select>
+    <select id="queryWorksPDF" resultType="java.lang.String">
+        select pdf from works where id=#{wid}
+    </select>
+	<select id="queryNiceWorks" resultMap="WorksMapA" >
+        select w.*,m.type,pml.prize_name from works w
+        INNER JOIN matchtable m ON m.mid=w.mid
+        INNER JOIN prize_match_level pml ON pml.pr_id=w.certificate
+        where m.isProject=1 and pml.level &lt;=2 and w.normalization>4
+        ORDER BY pml.level ASC,w.date DESC
+    </select>
+
+    <!--检索项目-作品赛-且奖项等级在1-3等奖，排除院长特别奖-->
+    <select id="queryWorksProject" resultMap="WorksMapA">
+        SELECT w.*,m.`name`,m.project,m.type FROM works w
+        INNER JOIN matchtable m ON w.mid=m.mid
+        INNER JOIN prize_match_level pml ON pml.pr_id=w.certificate
+        <where>
+           m.isCourse=0 and m.isProject=1 and w.certificate!=0 and pml.level &lt;=3 and w.normalization>4
+            <if test="matchType!=null">
+                and m.type = #{matchType}
+            </if>
+        </where>
+        ORDER BY w.date DESC , pml.level ASC
+    </select>
+    <!--通过作品ID查询作品所对应的比赛ID-->
+    <select id="queryMid" resultType="java.lang.Integer">
+        select w.mid from works w where w.id=#{wid}
+    </select>
+    <!--查询退回作品的信息-->
+	<select id="queryReturnWorksMes" resultMap="WorksMapB">
+        select
+        w.id,w.worksname,w.date,w.teacher,
+        m.`name`,m.project,m.type,
+        w.author1_name,w.author2_name,w.author3_name,w.author4_name,w.author5_name,
+        w.author1_id,w.author2_id,w.author3_id,w.author4_id,w.author5_id,
+        u.school,u.college as college,u.major as major,u.number as number,
+        u.phone as phone,u.email as email
+        from works w
+        INNER JOIN matchtable m ON w.mid=m.mid
+        INNER JOIN user u ON u.number=w.author1_id
+        <where>
+            w.normalization=-1 and m.isSort=0
+            <if test="match_name!=null">
+                and m.name like "%"#{match_name}"%"
+            </if>
+            <if test="match_project!=null">
+                and m.project like "%"#{match_project}"%"
+            </if>
+            <if test="work_name!=null">
+                and w.worksname like "%"#{work_name}"%"
+            </if>
+            <if test="type!=null">
+                and m.type like "%"#{type}"%"
+            </if>
+            <if test="author1_name!=null">
+                and w.author1_name like "%"#{author1_name}"%"
+            </if>
+            <if test="leaderteacher!=null">
+                and w.teacher like "%"#{leaderteacher}"%"
+            </if>
+            <if test="teamname!=null">
+                and w.teamname like "%"#{teamname}"%"
+            </if>
+        </where>
+        order by UNIX_TIMESTAMP(w.date) DESC,type
+    </select>
+    <!--通过作品ID查找对应负责人ID-->
+    <select id="queryAuthorIdByWid" resultType="java.lang.Integer">
+        select author1_id from works
+        where id=#{wid}
+    </select>
+
+	<select id="querySimilarWorks" resultMap="WorksMapB">
+        SELECT w.id,w.worksname,w.date,w.teacher,m.`name`,m.project,m.type,w.author1_name,u.school,u.college,u.major,u.number,u.phone,u.email FROM works w
+        INNER JOIN matchtable m ON w.mid=m.mid
+        INNER JOIN user u ON u.number=w.author1_id
+        <where>
+            w.normalization=-2 and m.isSort=0
+            <if test="match_name!=null">
+                and m.name like "%"#{match_name}"%"
+            </if>
+            <if test="match_project!=null">
+                and m.project like "%"#{match_project}"%"
+            </if>
+            <if test="work_name!=null">
+                and w.worksname like "%"#{work_name}"%"
+            </if>
+            <if test="type!=null">
+                and m.type like "%"#{type}"%"
+            </if>
+            <if test="author1_name!=null">
+                and w.author1_name like "%"#{author1_name}"%"
+            </if>
+            <if test="leaderteacher!=null">
+                and w.teacher like "%"#{leaderteacher}"%"
+            </if>
+            <if test="teamname!=null">
+                and w.teamname like "%"#{teamname}"%"
+            </if>
+
+        </where>
+        order by m.type
+    </select>
+    <select id="queryFirstSimilarWorksByWid" resultType="com.example.demo.pojo.Similarity">
+        select w.worksname as worksName,w.author1_name as authorName,sm.title_similarity,sm.introduct_similarity,sm.design_similarity from works w
+        INNER JOIN similar sm on sm.secondworkid=w.id
+        where sm.firstworkid=#{wid}
+    </select>
+    <select id="querySecondWorksByWid" resultType="com.example.demo.pojo.Similarity">
+        select w.worksname as worksName,w.author1_name as authorName,sm.title_similarity,sm.introduct_similarity,sm.design_similarity from works w
+        INNER JOIN similar sm on sm.firstworkid=w.id
+        where sm.secondworkid=#{wid}
+    </select>
+    <select id="queryWorksMes" resultMap="WorksMapA">
+        select  w.*,m.`name`,m.project,m.type from works w
+        INNER JOIN matchtable m on w.mid=m.mid
+        where w.normalization=0
+    </select>
+    <select id="queryNoScoreWorksMes" resultMap="WorksMapB">
+        SELECT
+        w.id,w.worksname,w.date,w.teacher,
+        m.`name`,m.project,m.type,
+        w.author1_name,w.author2_name,w.author3_name,w.author4_name,w.author5_name,
+        w.author1_id,w.author2_id,w.author3_id,w.author4_id,w.author5_id,
+        u.school,u.college as college,u.major as major,u.number as number,
+        u.phone as phone,u.email as email
+        FROM works w
+        INNER JOIN matchtable m ON w.mid=m.mid
+        INNER JOIN user u ON u.number=w.author1_id
+        <where>
+            w.normalization=2 and m.isSort=0
+            <if test="match_name!=null">
+                and m.name like "%"#{match_name}"%"
+            </if>
+            <if test="match_project!=null">
+                and m.project like "%"#{match_project}"%"
+            </if>
+            <if test="work_name!=null">
+                and w.worksname like "%"#{work_name}"%"
+            </if>
+            <if test="type!=null">
+                and m.type like "%"#{type}"%"
+            </if>
+            <if test="author1_name!=null">
+                and w.author1_name like "%"#{author1_name}"%"
+            </if>
+            <if test="leaderteacher!=null">
+                and w.teacher like "%"#{leaderteacher}"%"
+            </if>
+            <if test="teamname!=null">
+                and w.teamname like "%"#{teamname}"%"
+            </if>
+        </where>
+        order by UNIX_TIMESTAMP(w.date) DESC,m.type
+    </select>
+	<select id="searchAllWorks" resultType="com.example.demo.pojo.Workdomain.Works" parameterType="java.lang.String">
+        SELECT
+            w.*,m.name as match_name,m.project as match_project,m.type as category
+        FROM
+            works w
+        INNER JOIN matchtable m ON m.mid=w.mid
+        WHERE
+        ${sql}
+    </select>
+	<select id="queryCourseWorks" resultMap="WorksMapA">
+        SELECT w.*,m.`name`,m.project,m.type FROM works w
+        INNER JOIN matchtable m ON w.mid=m.mid
+        <where>
+             w.normalization=5 and w.certificate!=-1  and m.isCourse=1 and m.isProject=1
+            <if test="Course_match_Type!=null">
+                and m.type = #{Course_match_Type}
+            </if>
+        </where>
+    </select>
+    <select id="queryWorksPrizeName" resultType="java.lang.String">
+        select pml.prize_name
+        FROM prize_match_level pml
+        INNER JOIN works w ON w.certificate=pml.pr_id
+        where w.id=#{wid}
+    </select>
+    <select id="queryIsCourse" resultType="java.lang.Integer">
+        select m.isCourse
+        from matchtable m
+        where m.mid=#{mid}
+    </select>
+    <select id="queryWorkMesByUid" resultMap="WorksMapA">
+        SELECT w.*
+        from works w
+        where w.user_id=#{uid} and w.mid=#{mid} and w.normalization &lt;0
+    </select>
+    <select id="queryNormlizationByWid" resultType="java.lang.Integer">
+        select normalization from works where id=#{wid}
+    </select>
+    <select id="queryWidByMid" resultType="java.lang.Integer">
+        select w.id from works w where w.mid=#{mid}
+    </select>
+
+
+    <insert id="insertIntoSubmit" useGeneratedKeys="true" keyProperty="wid">
+        insert into works
+        (user_id,worksname,teamname,mid,introduce,design,date,teacher,unit,certificate,
+        author1_id,author1_name,
+        author2_id,author2_name,
+        author3_id,author3_name,
+        author4_id,author4_name,
+        author5_id,author5_name)
+        values
+        (#{user_id},#{worksname},#{teamname},#{mid},#{introduce},#{design},#{date},#{teacher},#{unit},#{certificate},
+        #{author1_id},#{author1_name},
+        #{author2_id},#{author2_name},
+        #{author3_id},#{author3_name},
+        #{author4_id},#{author4_name},
+        #{author5_id},#{author5_name})
+    </insert>
+     <insert id="updateWorksMes_NOVedio" >
+        update  works
+        set
+        image1=#{image1},image2=#{image2},image3=#{image3},image4=#{image4},image5=#{image5},
+        document=#{document},pdf=#{pdf},normalization=#{normalization}
+        where id=#{wid}
+    </insert>
+    <!--将选手和作品相连-->
+    <insert id="insertIntoWorksUser" parameterType="java.util.List">
+        insert  INTO  user_works (wid,number,mid) VALUES
+        <foreach collection ="list" item="item" index= "index" separator =",">
+        (
+            #{item.wid},
+            #{item.number},
+            #{item.mid}
+        )
+        </foreach>
+    </insert>
+    <insert id="insertIntoSimilar" parameterType="java.util.List">
+        INSERT  INTO  similar (firstworkid,secondworkid,title_similarity,introduct_similarity,design_similarity) VALUES
+        <foreach collection ="list" item="item" index= "index" separator =",">
+            (
+                #{item.firstworkid},
+                #{item.secondworkid},
+                #{item.title_similarity},
+                #{item.introduct_similarity},
+                #{item.design_similarity}
+            )
+        </foreach>
+    </insert>
+    <update id="updateDistribute">
+         update distribute
+         set scoreNum=#{score},markMes=#{markMes} ,estimate=#{estimate}
+         where wid=#{wid} and tid=#{tid}
+    </update>
+    <update id="updateWorksNorOne">
+        update works set normalization=#{r} where id=#{wid}
+    </update>
+    <!--将相似作品nor=-2改为nor=0-->
+    <update id="updateSimilarWorksNor">
+        update works set normalization=0 where normalization=#{nor}
+    </update>
+    <update id="updateSubmit">
+        update  works
+        set
+            user_id=#{user_id},worksname=#{worksname},teamname=#{teamname},
+            mid=#{mid},introduce=#{introduce},design=#{design},date=#{date},
+            teacher=#{teacher},unit=#{unit},certificate=#{certificate},
+            author1_id=#{author1_id},author1_name=#{author1_name},
+            author2_id=#{author2_id},author2_name=#{author2_name},
+            author3_id=#{author3_id},author3_name=#{author3_name},
+            author4_id=#{author4_id},author4_name=#{author4_name},
+            author5_id=#{author5_id},author5_name=#{author5_name}
+        where id=#{wid}
+    </update>
+    <update id="updateWorksVideo">
+        update  works
+        set
+        video=#{videoPath}
+        where id=#{wid}
+    </update>
+</mapper>

@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.dao.mapper.MatchMapper">
+    <select id="queryMatchMes" resultType="com.example.demo.pojo.Match">
+        select m.*,c.clubname
+        from Matchtable m
+        INNER JOIN club c ON m.club_id=c.cid
+        ORDER BY start_date DESC
+    </select>
+    <select id="fastqueryMatchMes" resultType="com.example.demo.pojo.Match">
+        select m.mid,m.name,m.start_date,m.end_date,m.short_content,m.image,m.project,c.clubname
+        from Matchtable m
+        INNER JOIN club c ON m.club_id=c.cid
+        ORDER BY start_date DESC
+    </select>
+    <select id="queryMatchMesByUid"  resultType="com.example.demo.pojo.Match">
+        SELECT p.mid,p.name,p.poster,p.type,p.number,p.short_content,p.image,onTime
+        FROM user_works uw
+        INNER JOIN Matchtable p ON uw.mid = p.mid
+        INNER JOIN works w on w.id=uw.wid
+        where uw.number=#{number} and w.normalization!=-1
+        GROUP BY p.mid
+    </select>
+    <select id="queryMatchMesByMid" parameterType="int" resultType="com.example.demo.pojo.Match">
+        select m.*,c.clubname
+        from Matchtable m
+        INNER JOIN club c ON m.club_id=c.cid
+        where mid=#{mid}
+    </select>
+    <select id="queryMatchContentByMid" parameterType="int" resultType="com.example.demo.pojo.Match">
+        select m.*
+        from Matchtable m
+        where mid=#{mid}
+    </select>
+
+    <select id="queryMatchMesByString" parameterType="map" resultType="com.example.demo.pojo.Match">
+        select m.*,c.clubname
+        from Matchtable m
+        INNER JOIN club c ON m.club_id=c.cid
+        <where>
+            m.onTime=#{onTime} and m.isSort=#{isSort}
+            <if test="match_name!=null">
+                and name like "%"#{match_name}"%"
+            </if>
+            <if test="match_project!=null">
+                and project like "%"#{match_project}"%"
+            </if>
+            <if test="type!=null">
+                and type like "%"#{type}"%"
+            </if>
+            <if test="poster!=null">
+                and poster like "%"#{poster}"%"
+            </if>
+        </where>
+        ORDER BY start_date DESC
+    </select>
+    <select id="queryNoticeByMname" resultType="com.example.demo.pojo.Notice">
+        select * from notice where match_name=#{match_name} ORDER BY time DESC
+    </select>
+    <select id="queryDynamicByMname" resultType="com.example.demo.pojo.Dynamic">
+        select * from dynamic where match_name=#{match_name} ORDER BY time DESC
+    </select>
+    <select id="queryDynamicImgByMname" resultType="com.example.demo.pojo.Dynamic">
+        select id,title,short_content,image1,image2,image3,image4 from dynamic where match_name=#{match_name} ORDER BY time DESC
+    </select>
+    <select id="queryMatchMesOrderByname" resultType="com.example.demo.pojo.Match">
+        select
+        CASE match_name
+            WHEN 'IT节' THEN 'IT'
+            WHEN '校外学科竞赛' THEN 'outside_school_match'
+            ELSE 'GMCPC'
+            END AS name
+        from dynamic
+        UNION
+        select
+            CASE match_name
+            WHEN 'IT节' THEN 'IT'
+            WHEN '校外学科竞赛' THEN 'outside_school_match'
+            ELSE 'GMCPC'
+            END AS name
+        from notice
+        Group by match_name
+    </select>
+    <!--查询上线的比赛-->
+    <select id="queryMatchMesonTime" resultType="com.example.demo.pojo.Match">
+        select m.*,c.clubname
+        from Matchtable m
+        INNER JOIN club c ON m.club_id=c.cid
+        where onTime=1
+        ORDER BY start_date DESC
+    </select>
+    <select id="queryMatchMesisProject_NoCor" resultType="com.example.demo.pojo.Match">
+        select distinct m.*,c.clubname
+        from Matchtable m
+        INNER JOIN club c ON m.club_id=c.cid
+        where  isProject=1 and m.isCourse=0
+        ORDER BY start_date DESC
+    </select>
+    <select id="queryMatchMesonTimeAndPro_Cor" resultType="com.example.demo.pojo.Match">
+        select m.*,c.clubname
+        from Matchtable m
+        INNER JOIN club c ON m.club_id=c.cid
+        where isProject=1 and m.isCourse=1
+        ORDER BY start_date DESC
+    </select>
+    <!--获取比赛的ID和name-->
+	<select id="queryMatchID" resultType="java.util.Map">
+       select mid,name,project,type from matchtable
+       where isSort=0
+       GROUP BY  name,project,type
+    </select>
+    <select id="queryMatchMesByName" resultType="com.example.demo.pojo.Match">
+        select m.* from matchtable m where name like "%" #{match_name}"%"
+    </select>
+	<select id="queryMatchMesonTimeAndPro_CorByCid" resultType="java.util.Map">
+        select m.mid,m.name,m.project,m.type
+        from matchtable m
+        INNER JOIN club c ON m.club_id=c.cid
+        where onTime=1 and isProject=1 and m.isCourse=1 and m.club_id=#{cid} and m.isSort=0
+        GROUP BY name,project,type
+    </select>
+    <select id="queryMatchMesisProject" resultType="com.example.demo.pojo.Match">
+        select distinct m.*,c.clubname
+        from Matchtable m
+        INNER JOIN club c ON m.club_id=c.cid
+        where  isProject=1
+        ORDER BY start_date DESC
+    </select>
+
+
+    <update id="updateMatchMes" parameterType="com.example.demo.pojo.Match">
+        update Matchtable set
+        name=#{name},project=#{project},now=#{now},
+        type=#{type},start_date=#{start_date},end_date=#{end_date},
+        club_id=#{club_id},number=#{number},poster=#{poster},content=#{content},short_content=#{short_content},image=#{image}
+        where mid=#{mid}
+    </update>
+    <!--更新onTime字段，判断前台是否展示-->
+    <update id="UpdateOnTimeByMid">
+        update Matchtable set
+        onTime=#{onTime}
+        where mid=#{mid}
+    </update>
+	<update id="UpdateProjectByMid">
+        update Matchtable set
+        isProject=#{isProject}
+        where mid=#{mid}
+    </update>
+    <update id="UpdateCourseByMid">
+         update Matchtable set
+        isCourse=#{isCourse}
+        where mid=#{mid}
+    </update>
+    <update id="UpdateCodeByMid">
+        update Matchtable set
+        code=#{code}
+        where mid=#{mid}
+    </update>
+    <update id="UpdateIsSortByMid">
+        update Matchtable set
+        isSort=#{isSort}
+        where mid=#{mid}
+    </update>
+    <insert id="addMatchMes" parameterType="com.example.demo.pojo.Match">
+        insert into Matchtable(mid,name,project,now,type,start_date,end_date,club_id,number,poster,content,short_content,image,onTime,isProject,isCourse,isSort)
+        values (#{mid},#{name},#{project},#{now},#{type},#{start_date},#{end_date},#{club_id},#{number},#{poster},#{content},#{short_content},#{image},#{onTime},#{isProject},#{isCourse},#{isSort})
+    </insert>
+    <delete id="deleteMatchMes" parameterType="int">
+        delete from Matchtable where mid=#{mid}
+    </delete>
+    <delete id="deleteDistributeByMid">
+        delete from distribute
+        where wid IN
+        <foreach collection="widList" item="wid" open="(" separator="," close=")">
+            #{wid}
+        </foreach>
+    </delete>
+    <delete id="deleteCXWorksByMid">
+        delete from cxworks where mid=#{mid}
+    </delete>
+    <delete id="deletePrize_Model_LevelByMid">
+        delete from prize_model_level where mid=#{mid}
+    </delete>
+</mapper>

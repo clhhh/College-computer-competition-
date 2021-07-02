@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.dao.mapper.TeacherMapper">
+    <resultMap id="CurMap" type="com.example.demo.pojo.Userdomain.CurrentUser">
+        <id property="pid" column="tid"/>
+        <result property="pwd" column="password"/>
+        <collection property="roles" ofType="com.example.demo.pojo.Userdomain.Role">
+            <id property="rid" column="rid"/>
+            <result property="rname" column="rname"/>
+            <collection property="permissions" ofType="com.example.demo.pojo.Userdomain.Permission">
+                <id property="pid" column="pid"/>
+                <result property="name" column="name"/>
+                <result property="action" column="action"/>
+            </collection>
+        </collection>
+    </resultMap>
+    <resultMap id="CurTeacher" type="com.example.demo.pojo.Userdomain.CurrentTeacher">
+        <id property="tid" column="tid"/>
+        <result property="username" column="username"/>
+        <result property="realname" column="realname"/>
+        <result property="password" column="password"/>
+        <result property="phone" column="phone"/>
+        <result property="email" column="email"/>
+        <result property="school" column="school"/>
+        <result property="college" column="college"/>
+        <result property="code" column="code"/>
+        <result property="role" column="rname"/>
+    </resultMap>
+    <select id="loginCheck" resultMap="CurMap">
+        select t.tid,t.password,r.*,p.* from teacher t
+        INNER JOIN teacher_role tr ON t.tid=tr.tid
+        INNER JOIN role r ON r.rid=tr.rid
+        INNER JOIN permission_role pr ON pr.rid=r.rid
+        INNER JOIN permission p ON p.pid=pr.pid
+        where t.username=#{username} and t.code=1
+    </select>
+    <select id="loginCheckTeacherGser" resultMap="CurMap">
+        select t.tid,t.password,r.*,p.* from teacher t
+         INNER JOIN teacher_role tr ON t.tid=tr.tid
+         INNER JOIN role r ON r.rid=tr.rid
+         INNER JOIN permission_role pr ON pr.rid=r.rid
+         INNER JOIN permission p ON p.pid=pr.pid
+        where t.username=#{username} and r.rid!=-1
+    </select>
+    <select id="loginCheckCJ" resultMap="CurMap">
+        select cj.cj_id as tid ,cj.password,r.*,p.* from course_judge cj
+        INNER JOIN course_judge_role cjr ON cjr.cj_id=cj.cj_id
+        INNER JOIN role r ON r.rid=cjr.rid
+        INNER JOIN permission_role pr ON pr.rid=r.rid
+        INNER JOIN permission p ON p.pid=pr.pid
+        where cj.username=#{username}
+    </select>
+    <select id="queryTeachMes" resultType="com.example.demo.pojo.Userdomain.Teacher">
+        select * from teacher
+    </select>
+    <select id="queryTeachMesByid" resultType="com.example.demo.pojo.Userdomain.Teacher">
+        select * from teacher where tid=#{tid}
+    </select>
+    <select id="queryTeachMesByString" resultMap="CurTeacher">
+        select t.*,IF(r.rname='judge' or r.rname='anybody' ,NULL,r.rname)rname from teacher t
+        INNER JOIN teacher_role tr ON t.tid=tr.tid
+        INNER JOIN role r ON r.rid=tr.rid
+         <where>
+             <if test="realname!=null">
+                and LOCATE(#{realname},realname)>0
+             </if>
+             <if test="school!=null">
+                 and LOCATE(#{school},school)>0
+             </if>
+              <if test="college!=null">
+                 and LOCATE(#{college},college)>0
+             </if>
+         </where>
+         GROUP BY t.tid
+    </select>
+
+    <select id="queryJudge" resultType="com.example.demo.pojo.Userdomain.TeacherJudge">
+        select t.tid,t.realname,t.username from teacher t where t.code=1
+    </select>
+    <select id="queryJudgeByid" resultType="com.example.demo.pojo.Userdomain.Teacher">
+         select tid,username,realname,password,major,college,school,phone,email from teacher where tid=#{tid} and code=1
+         UNION ALL
+         select cj.cj_id as tid,cj.username,cj.realname,cj.password,
+         cj.major as major,cj.college as college,cj.school,cj.phone,cj.email from course_judge cj where cj.cj_id=#{tid}
+    </select>
+    <select id="queryJudgeMesByString" resultType="com.example.demo.pojo.Userdomain.Teacher">
+        select * from teacher
+        <where>
+            code=1
+            <if test="realname!=null">
+                and LOCATE(#{realname},realname)>0
+            </if>
+            <if test="school!=null">
+                and LOCATE(#{school},school)>0
+            </if>
+            <if test="college!=null">
+                and LOCATE(#{college},college)>0
+            </if>
+        </where>
+    </select>
+
+    <insert id="insertTeacher_role" parameterType="int">
+        insert into
+        teacher_role (tid,rid)
+        values
+        (#{tid},#{rid})
+    </insert>
+    <insert id="insertTeacherMes" useGeneratedKeys="true" keyProperty="tid">
+        insert into
+        teacher (username,realname,password,major,college,school,phone,email,code)
+        values
+        (#{username},#{realname},#{password},#{major},#{college},#{school},#{phone},#{email},#{code})
+    </insert>
+    <update id="updateTeacherCode" parameterType="int">
+        update teacher set code=1 where tid=#{tid} and code=0
+    </update>
+
+    <delete id="deleteTeacher_role_Judge" parameterType="int">
+        delete from teacher_role where tid=#{tid} and rid=#{rid}
+    </delete>
+    <delete id="deleteTeacherMes">
+        delete from teacher where tid=#{tid}
+    </delete>
+    <delete id="deleteTeacher_role_Gser">
+        delete from teacher_role where tid=#{tid} and rid!=5 and rid!=-1
+    </delete>
+    <update id="cancelTeacherCode" parameterType="int">
+         update teacher set code=0 where tid=#{tid} and code=1
+    </update>
+    <update id="updateTeacherMes">
+        update teacher
+        set
+        username=#{username},realname=#{realname},college=#{college},
+        password=#{password},school=#{school},email=#{email},code=#{code},
+        phone=#{phone}
+        where
+        tid=#{tid}
+    </update>
+    <update id="updateTeacher_role">
+        update teacher_role
+        set rid=#{rid}
+        where tid=#{tid}
+    </update>
+
+
+    <!--前台-->
+    <select id="queryMatchByTid" resultType="com.example.demo.pojo.Match">
+        SELECT m.project FROM teacher t
+        INNER JOIN distribute d ON t.tid=d.tid
+        INNER JOIN works w ON w.id=d.wid
+        INNER JOIN matchtable m ON w.mid=m.mid
+        where t.tid=#{tid} GROUP BY m.project
+
+        UNION ALL
+
+        SELECT m.project FROM course_judge cj
+        INNER JOIN distribute d ON cj.cj_id=d.tid
+        INNER JOIN works w ON w.id=d.wid
+        INNER JOIN matchtable m ON w.mid=m.mid
+        where cj.cj_id=#{tid} GROUP BY m.project
+
+    </select>
+    <select id="queryWorksByTid" resultType="com.example.demo.pojo.Distribute">
+        select * from (
+          SELECT m.type,m.project,m.name as match_name,d.*,m.end_date,w.worksname FROM distribute d
+           INNER JOIN teacher t ON t.tid=d.tid
+           INNER JOIN works w ON w.id=d.wid
+           INNER JOIN matchtable m ON w.mid=m.mid
+           where d.tid=#{tid}
+           order by d.scoreNum ASC
+        ) as teachDis
+
+        UNION ALL
+
+        select * from(
+         SELECT m.type,m.project,m.name as match_name,d.*,m.end_date,w.worksname FROM distribute d
+          INNER JOIN course_judge cj ON cj.cj_id=d.tid
+          INNER JOIN works w ON w.id=d.wid
+          INNER JOIN matchtable m ON w.mid=m.mid
+          where d.tid=#{tid}
+          order by d.scoreNum ASC
+        ) as courseDis
+    </select>
+    <select id="queryDistributeWork" resultType="com.example.demo.pojo.Distribute">
+        select d.scoreNum,d.markMes from distribute d
+        where wid=#{wid} and tid=#{tid}
+    </select>
+
+
+</mapper>

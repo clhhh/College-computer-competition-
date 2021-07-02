@@ -1,0 +1,51 @@
+spring:
+  datasource:
+    username: hp
+    password: Zhan1999222
+    url: jdbc:mysql://8.129.29.208:3306/hp?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=UTF-8&allowMultiQueries=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    type: com.alibaba.druid.pool.DruidDataSource
+    initialSize: 5
+    minIdle: 5
+    #最大连接池数量
+    maxActive: 20
+    #最大等待数量
+    maxWait: 60000
+    #一分钟后自动断掉
+    timeBetweenEvictionRunsMillis: 60000
+    minEvictableIdleTimeMillis: 300000
+    validationQuery: SELECT 1 FROM DUAL
+    testWhileIdle: true
+    testOnBorrow: false
+    testOnReturn: false
+    poolPreparedStatements: true
+
+    #配置监控统计拦截的filters，stat：监控统计、log4j：日志记录、wall：防御sql注入
+    #如果允许时报错 java.lang.ClassNotFoundException：org.apache.log4j.Priority
+    #则导入log4j依赖即可，Maven地址：https://mvnrepository.com/artifact/log4j/log4j
+    filters: stat
+    maxPoolPreparedStatementPerConnectionSize: 20
+    useGlobalDataSourceStat: true
+    connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=500
+  redis:
+    host: 1.15.182.218
+    port: 6379
+    timeout: 50000
+    database: 0
+    lettuce:
+      pool:
+        max-active: 8
+        max-wait: -1
+        max-idle: 8
+        min-idle: 0
+      shutdown-timeout: 1000
+
+file:
+  path: F:\excel\
+location:
+  path: http://localhost:8080/
+pagehelper:
+  helperDialect: mysql
+  reasonable: true
+  supportMethodsArguments: true
+  params: count=countSql

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.dao.mapper.LbContentMapper">
+	<insert id="insertlbVedio">
+		insert into lbvedio(path,image,vedioName,vedioPhotoName) values (#{path},#{image},#{vedioName},#{vedioPhotoName})
+	</insert>
+	<insert id="insertlbPhoto">
+		insert into lbphoto(number,path,photoName) values (#{number},#{path},#{photoName})
+	</insert>
+	<update id="updatelbPhoto" parameterType="com.example.demo.pojo.LBphoto">
+		update lbphoto set path=#{path},photoName=#{photoName}
+		where id=#{id}
+	</update>
+	<!--修改轮播图的顺序-->
+	<update id="updatelbPhotoNum">
+		<foreach collection ="list" item="item" index= "index" open="" close="" separator=";">
+			update lbphoto set number=#{item.num} where w.id=#{item.id}
+		</foreach>
+	</update>
+	<update id="updatelbVedio" parameterType="com.example.demo.pojo.LBvedio">
+		update lbvedio
+		<trim prefix="set" suffixOverrides="," suffix=" where id = #{id}">
+			<if test="path != null">  path=#{path}, </if>
+			<if test="image != null "> image=#{image},</if>
+			<if test="vedioName != null"> vedioName=#{vedioName}, </if>
+			<if test="vedioPhotoName != null"> vedioPhotoName=#{vedioPhotoName}, </if>
+		</trim>
+	</update>
+
+	<delete id="deletelbPhoto">
+		delete from lbphoto where id=#{id}
+	</delete>
+	<delete id="deletelbVedio">
+		delete from lbvedio where id=#{id}
+	</delete>
+
+	<select id="querylbPhoto" resultType="com.example.demo.pojo.LBphoto">
+		select * from lbphoto
+	</select>
+	<select id="querylbPhotobyid" resultType="com.example.demo.pojo.LBphoto">
+		select * from lbphoto where id=#{id}
+	</select>
+	<select id="querylbPhotoMaxNum" resultType="java.lang.Integer">
+		select max(number) from lbphoto
+	</select>
+	<select id="querylbVedio" resultType="com.example.demo.pojo.LBvedio">
+		select * from lbvedio
+	</select>
+	<select id="querylbVediobyid" resultType="com.example.demo.pojo.LBvedio">
+		select * from lbvedio where id=#{id}
+	</select>
+
+
+
+</mapper>

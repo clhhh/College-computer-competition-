@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--设置路径-->
+<mapper namespace="com.example.demo.dao.mapper.UserMapper">
+    <resultMap id="UserMap" type="com.example.demo.pojo.Userdomain.User">
+        <id property="uid" column="uid"/>
+        <result property="match_name" column="name"/>
+        <result property="match_project" column="project"/>
+        <result property="type" column="type"/>
+        <result property="match_id" column="match_id"/>
+    </resultMap>
+    <resultMap id="CurMap" type="com.example.demo.pojo.Userdomain.CurrentUser">
+      <id property="pid" column="uid"/>
+      <result property="pwd" column="password"/>
+      <result property="username" column="username"/>
+      <result property="number" column="number"/>
+      <collection property="roles" ofType="com.example.demo.pojo.Userdomain.Role">
+        <id property="rid" column="rid"/>
+        <result property="rname" column="rname"/>
+        <collection property="permissions" ofType="com.example.demo.pojo.Userdomain.Permission">
+          <id property="pid" column="pid"/>
+          <result property="name" column="name"/>
+          <result property="action" column="action"/>
+        </collection>
+      </collection>
+    </resultMap>
+
+
+    <select id="codeCheck" parameterType="String" resultType="com.example.demo.pojo.Userdomain.User">
+        select *
+        FROM user
+        where code=#{code}
+    </select>
+    <select id="loginCheck" parameterType="String" resultMap="CurMap">
+    SELECT u.uid,u.password,u.username,u.number,r.*,p.*
+        FROM user u
+            INNER JOIN user_role ur on ur.uid = u.uid
+            INNER JOIN role r on r.rid = ur.rid
+            INNER JOIN permission_role pr on pr.rid = r.rid
+            INNER JOIN permission p on pr.pid = p.pid
+        WHERE u.number = #{username}
+  </select>
+    <select id="queryUserMesByUid" resultType="com.example.demo.pojo.Userdomain.User">
+        select * from user where uid=#{uid}
+    </select>
+
+    <select id="queryUserList" resultMap="UserMap" parameterType="map">
+    select u.* FROM user_works wu
+    INNER JOIN user u ON u.number=wu.number
+    INNER JOIN matchtable m on m.mid=wu.mid
+    GROUP BY u.uid
+    </select>
+
+    <select id="queryUserMes" resultType="com.example.demo.pojo.Userdomain.User">
+        select * from user
+    </select>
+    <select id="queryCUserByid" parameterType="int" resultType="java.util.Map">
+      select u.* FROM user_works wu
+      INNER JOIN user u on u.number=wu.number
+      WHERE u.uid=#{uid} GROUP BY wu.number
+    </select>
+    <select id="queryUserByString" parameterType="map" resultMap="UserMap">
+        select u.* FROM user_works wu
+        INNER JOIN user u ON u.number=wu.number
+        INNER JOIN matchtable m on m.mid=wu.mid
+        <where>
+            <if test="username!=null">
+                and username like "%"#{username}"%"
+            </if>
+            <if test="school!=null">
+                and school like "%"#{school}"%"
+            </if>
+            <if test="college!=null">
+                and college like "%"#{college}"%"
+            </if>
+            <if test="major!=null">
+                and major like "%"#{major}"%"
+            </if>
+
+        </where>
+        GROUP BY u.uid
+        ORDER BY  UNIX_TIMESTAMP(u.register_date) DESC
+    </select>
+    <select id="queryUserMatchWorksByUid" resultType="java.util.Map">
+        select m.name,m.project,m.type,w.worksname,w.teacher FROM user_works wu
+        INNER JOIN matchtable m ON wu.mid=m.mid
+        INNER JOIN works w ON w.id=wu.wid
+        INNER JOIN user u ON u.number=wu.number
+        WHERE u.uid=#{uid}
+    </select>
+    <select id="queryUserMesDetail" resultType="java.util.Map">
+        select u.uid as uid, u.username as username,u.number as number,
+        u.email as email,u.school as school,
+        u.major as major,u.phone as phone,
+        m.`name` as matchname,m.project as matchproject,
+        m.type as matchtype,w.worksname as workname,
+        DATE_FORMAT(w.date,'%Y-%m-%d %T:%f')  as date,w.teacher as teacher
+         FROM user_works wu
+        INNER JOIN user u ON u.number=wu.number
+        INNER JOIN matchtable m on m.mid=wu.mid
+		INNER JOIN works w ON w.id=wu.wid
+        <where>
+            <if test="username!=null">
+                and username like "%"#{username}"%"
+            </if>
+            <if test="school!=null">
+                and school like "%"#{school}"%"
+            </if>
+            <if test="college!=null">
+                and college like "%"#{college}"%"
+            </if>
+            <if test="major!=null">
+                and major like "%"#{major}"%"
+            </if>
+        </where>
+        ORDER BY u.number ASC
+    </select>
+	<select id="queryUserEmailByWid" resultType="java.lang.String">
+        select u.email from user u
+        INNER JOIN user_works uw on u.number=uw.number
+        INNER JOIN works w on uw.wid=w.id
+        where w.id in
+        <foreach collection="list" item="widList" open="(" close=")" separator=",">
+            #{widList}
+        </foreach>
+    </select>
+	<select id="queryUserNameByNumber" resultType="java.lang.String">
+        select u.username from user u where u.number like "%"#{number}"%"
+    </select>
+
+
+	<insert id="addUser" parameterType="com.example.demo.pojo.Userdomain.User">
+        insert
+        into user(uid,password,number,username,school,college,major,email,phone)
+        values(#{uid},#{password},#{number},#{username},#{school},#{college},#{major},#{email},#{phone})
+    </insert>
+    <insert id="addRole" parameterType="com.example.demo.pojo.Userdomain.User_Role">
+        insert
+        into user_role(uid,rid)
+        values (#{uid},#{rid})
+    </insert>
+
+
+    <update id="updateUser" parameterType="com.example.demo.pojo.Userdomain.User">
+        update user
+        set username=#{username},
+        school=#{school},college=#{college},major=#{major},
+        email=#{email},phone=#{phone}
+        where uid = #{uid}
+   </update>
+    <update id="updatePwd" parameterType="String">
+    update user
+    set password=#{password}
+    where email=#{email}
+    </update>
+   <update id="updateCode" parameterType="String">
+       update user
+       set code=#{code}
+       where email=#{email}
+   </update>
+
+
+
+    <delete id="deleteUser" parameterType="com.example.demo.pojo.Userdomain.User">
+    delete from user where uid = #{uid}
+    </delete>
+
+</mapper>

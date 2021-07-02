@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.dao.mapper.GserMapper">
+    <resultMap id="CurMap" type="com.example.demo.pojo.Userdomain.CurrentUser">
+        <id property="pid" column="gid"/>
+        <result property="pwd" column="password"/>
+        <result property="username" column="username"/>
+        <collection property="roles" ofType="com.example.demo.pojo.Userdomain.Role">
+            <id property="rid" column="rid"/>
+            <result property="rname" column="rname"/>
+            <collection property="permissions" ofType="com.example.demo.pojo.Userdomain.Permission">
+                <id property="pid" column="pid"/>
+                <result property="name" column="name"/>
+                <result property="action" column="action"/>
+            </collection>
+        </collection>
+    </resultMap>
+    <resultMap id="GserMap" type="com.example.demo.pojo.Userdomain.Gser">
+        <id property="gid" column="gid"/>
+        <result property="realname" column="realname"/>
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <result property="code" column="code"/>
+        <result property="clubname" column="clubname"/>
+        <collection property="roles" ofType="com.example.demo.pojo.Userdomain.Role">
+            <id property="rid" column="rid"/>
+            <result property="rname" column="rname"/>
+            <collection property="permissions" ofType="com.example.demo.pojo.Userdomain.Permission">
+                <id property="pid" column="pid"/>
+                <result property="name" column="name"/>
+                <result property="action" column="action"/>
+            </collection>
+        </collection>
+    </resultMap>
+    <resultMap id="GserRoleMap" type="com.example.demo.pojo.Userdomain.Role">
+        <id property="rid" column="rid"/>
+        <result property="rname" column="rname"/>
+        <collection property="permissions" ofType="com.example.demo.pojo.Userdomain.Permission">
+            <id property="pid" column="pid"/>
+            <result property="name" column="name"/>
+            <result property="action" column="action"/>
+        </collection>
+    </resultMap>
+    <select id="loginCheck" resultMap="CurMap">
+        SELECT g.*,r.*,p.* FROM gser g
+        INNER JOIN gser_role gr ON gr.gid=g.gid
+        INNER JOIN role r ON r.rid=gr.rid
+        INNER JOIN permission_role pr ON pr.rid=r.rid
+        INNER JOIN permission p ON p.pid=pr.pid
+        where g.username=#{username}
+    </select>
+
+
+    <select id="queryGserList" resultMap="GserMap">
+        /*查找课程+协会管理员*/
+        SELECT g.*,r.*,p.*,c.clubname FROM gser g
+        INNER JOIN gser_role gr ON gr.gid=g.gid
+        INNER JOIN role r ON r.rid=gr.rid
+        INNER JOIN permission_role pr ON pr.rid=r.rid
+        INNER JOIN permission p ON p.pid=pr.pid
+        INNER JOIN club c on c.cid = g.code
+        where r.rid=7 or r.rid=4
+        group by gid
+
+        UNION ALL
+        /*查找高级+专项+数据管理员*/
+        SELECT g.*,r.*,p.*,null as clubname FROM gser g
+        INNER JOIN gser_role gr ON gr.gid=g.gid
+        INNER JOIN role r ON r.rid=gr.rid
+        INNER JOIN permission_role pr ON pr.rid=r.rid
+        INNER JOIN permission p ON p.pid=pr.pid
+        where  r.rid=3 or r.rid=6 or r.rid=2
+        group by gid
+
+        UNION ALL
+        /*查找教师高级+专项+数据管理员*/
+        SELECT t.tid as gid,t.realname,t.username,t.password,t.code,r.*,p.*,"teacher" as clubname FROM teacher t
+        INNER JOIN teacher_role tr ON tr.tid=t.tid
+        INNER JOIN role r ON r.rid=tr.rid
+        INNER JOIN permission_role pr ON pr.rid=r.rid
+        INNER JOIN permission p ON p.pid=pr.pid
+        where r.rid=3 or r.rid=6 or r.rid=2
+        group by gid
+    </select>
+    <select id="queryGserByGid" resultMap="GserMap">
+        SELECT g.*,r.*,p.* FROM gser g
+        INNER JOIN gser_role gr ON gr.gid=g.gid
+        INNER JOIN role r ON r.rid=gr.rid
+        INNER JOIN permission_role pr ON pr.rid=r.rid
+        INNER JOIN permission p ON p.pid=pr.pid
+        WHERE g.gid=#{gid}
+
+    </select>
+
+    <select id="queryGserByString" resultMap="GserMap">
+        /*查找课程+协会管理员*/
+        SELECT g.*,r.*,p.*,c.clubname FROM gser g
+        INNER JOIN gser_role gr ON gr.gid=g.gid
+        INNER JOIN role r ON r.rid=gr.rid
+        INNER JOIN permission_role pr ON pr.rid=r.rid
+        INNER JOIN permission p ON p.pid=pr.pid
+        INNER JOIN club c on c.cid = g.code
+        <where>
+            r.rid=7 or r.rid=4
+            <if test="username!=null">
+                and username like "%"#{username}"%"
+            </if>
+            <if test="realname!=null">
+                and realname like "%"#{realname}"%"
+            </if>
+        </where>
+        group by gid
+
+        UNION ALL
+        /*查找高级+专项+数据管理员*/
+        SELECT g.*,r.*,p.*,null as clubname FROM gser g
+        INNER JOIN gser_role gr ON gr.gid=g.gid
+        INNER JOIN role r ON r.rid=gr.rid
+        INNER JOIN permission_role pr ON pr.rid=r.rid
+        INNER JOIN permission p ON p.pid=pr.pid
+        <where>
+            r.rid=3 or r.rid=6 or r.rid=2
+            <if test="username!=null">
+                and username like "%"#{username}"%"
+            </if>
+            <if test="realname!=null">
+                and realname like "%"#{realname}"%"
+            </if>
+        </where>
+        group by gid
+        UNION ALL
+        /*查找教师高级+专项+数据管理员*/
+        SELECT t.tid as gid,t.realname,t.username,t.password,t.code,r.*,p.*,"teacher" as clubname FROM teacher t
+        INNER JOIN teacher_role tr ON tr.tid=t.tid
+        INNER JOIN role r ON r.rid=tr.rid
+        INNER JOIN permission_role pr ON pr.rid=r.rid
+        INNER JOIN permission p ON p.pid=pr.pid
+        <where>
+            r.rid=3 or r.rid=6 or r.rid=2
+            <if test="username!=null">
+                and username like "%"#{username}"%"
+            </if>
+            <if test="realname!=null">
+                and realname like "%"#{realname}"%"
+            </if>
+        </where>
+        group by gid
+    </select>
+    <select id="queryGserRole" resultType="java.lang.String">
+    SELECT r.rname FROM role r
+    INNER JOIN gser_role g ON r.rid=g.rid
+    WHERE g.gid=#{gid}
+
+    UNION ALL
+    SELECT r.rname from role r
+    INNER JOIN teacher_role tr ON tr.rid=r.rid
+    WHERE tr.tid=#{gid}
+    </select>
+	<select id="queryRole" resultMap="GserRoleMap">
+        select * from role r
+        INNER JOIN permission_role pr ON pr.rid=r.rid
+        INNER JOIN permission p ON p.pid=pr.pid
+        where r.rid>1 and r.rid!=5
+    </select>
+	<select id="queryCodeByGid" resultType="java.lang.Integer">
+        select g.code from gser g where g.gid=#{gid}
+    </select>
+    <select id="queryClubName" resultType="java.lang.String">
+        select c.clubname
+        from club c
+        INNER JOIN gser g ON g.code=c.cid
+        where g.gid=#{gid}
+    </select>
+
+    <insert id="insertRoleByid" parameterType="java.util.List">
+       INSERT IGNORE INTO gser_role (gid,rid) VALUES
+       (#{gid},#{rid})
+    </insert>
+    <insert id="insertGser" parameterType="com.example.demo.pojo.Userdomain.Gser" useGeneratedKeys="true" keyProperty="gid">
+        INSERT INTO gser (realname,username,password,code) VALUES
+        (#{realname},#{username},#{password},#{code})
+    </insert>
+
+    <update id="updateGser" parameterType="com.example.demo.pojo.Userdomain.Gser">
+        update gser
+        set realname=#{realname},username=#{username},password=#{password},code=#{code}
+        where gid=#{gid}
+    </update>
+    <update id="updateTeacherGser">
+        update teacher
+        set realname=#{realname},username=#{username},password=#{password}
+        where tid=#{gid}
+    </update>
+
+    <delete id="deleteGserRole" parameterType="int">
+        delete from gser_role where gid=#{gid}
+    </delete>
+    <delete id="deleteGser" parameterType="int">
+        delete from gser where gid=#{gid}
+    </delete>
+    <update id="updateTeacherGserRole">
+        update teacher_role
+        set rid=#{rid}
+        where tid=#{gid}
+    </update>
+    <update id="updateGserRole" >
+        update gser_role gr
+        set gr.rid=#{rid}
+        where gr.gid=#{gid}
+    </update>
+</mapper>
